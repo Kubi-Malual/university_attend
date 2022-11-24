@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:university_attend/Widget/menu.dart';
 class HomeSccreenScanner extends StatefulWidget {
   const HomeSccreenScanner({key}) : super(key: key);
 
@@ -14,12 +15,12 @@ class _HomeSccreenScannerState extends State<HomeSccreenScanner> {
   /// For Continuous scan
   Future<void> startBarcodeScanStream() async {
     FlutterBarcodeScanner.getBarcodeStreamReceiver(
-        '#ff6666', 'Cancel', true, ScanMode.BARCODE)!
+        '#ff6666', 'Cancel', true, ScanMode.BARCODE)
         .listen((barcode) => print(barcode));
   }
-  Future<void> barcodeScan() async {
+
+  Future<void> scanQR() async {
     String barcodeScanRes;
-    // Platform messages may fail, so we use a try/catch PlatformException.
     try {
       barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
           '#ff6666', 'Cancel', true, ScanMode.QR);
@@ -27,52 +28,60 @@ class _HomeSccreenScannerState extends State<HomeSccreenScanner> {
     } on PlatformException {
       barcodeScanRes = 'Failed to get platform version.';
     }
+//barcode scanner flutter ant
+    setState(() {
+      _scanBarcode = barcodeScanRes;
+    });
+  }
+
+  Future<void> scanBarcodeNormal() async {
+    String barcodeScanRes;
+    try {
+      barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+          '#ff6666', 'Cancel', true, ScanMode.BARCODE);
+      print(barcodeScanRes);
+    } on PlatformException {
+      barcodeScanRes = 'Failed to get platform version.';
+    }
+
     if (!mounted) return;
     setState(() {
       _scanBarcode = barcodeScanRes;
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: const Text('Flutter Barcode Scanner Demo'),
-          centerTitle: true,
-          automaticallyImplyLeading: false,
-          backgroundColor: Colors.cyan,
-        ),
-        body: Builder(builder: (BuildContext context) {
-          return Container(
-              alignment: Alignment.center,
-              child: Flex(
-                  direction: Axis.vertical,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    const Image(
-                      image: AssetImage("assets/logo.png"),
-                      height: 150,
-                    ),
-                    const SizedBox(
-                      height: 50,
-                    ),
-                    Text('Scan result : $_scanBarcode\n',
-                        style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold)),
-                    SizedBox(
-                      height: 45,
-                      child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            primary: Colors.cyan,
-                          ),
-                          onPressed: () => barcodeScan(),
-                          child: const Text('Barcode Scan',
-                              style: TextStyle(
-                                  fontSize: 17, fontWeight: FontWeight.bold))),
-                    ),
-                  ]));
-        }));
-
+    return Stack(
+        children: <Widget>[
+      Image.asset(
+      "assets/images/background.png",
+        height: MediaQuery.of(context).size.height,
+        width: MediaQuery.of(context).size.width,
+        fit: BoxFit.cover,
+      ),
+        Scaffold(
+          drawer: NavBar(),
+          appBar: AppBar(title: const Text('Sudafast Attendance')),
+          body: Builder(builder: (BuildContext context) {
+            return Container(
+                alignment: Alignment.center,
+                child: Flex(
+                    direction: Axis.vertical,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      ElevatedButton(
+                          onPressed: () => scanBarcodeNormal(),
+                          child: const Text('Barcode scan')),
+                      ElevatedButton(
+                          onPressed: () => scanQR(),
+                          child: const Text('QR scan')),
+                      ElevatedButton(
+                          onPressed: () => startBarcodeScanStream(),
+                          child: const Text('Barcode scan stream')),
+                      Text('Scan result : $_scanBarcode\n',
+                          style: const TextStyle(fontSize: 20))
+                    ]));
+          }))]);
   }
 }
