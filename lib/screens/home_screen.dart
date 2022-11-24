@@ -1,78 +1,107 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
-class HomeSccreenScanner extends StatefulWidget {
-  const HomeSccreenScanner({key}) : super(key: key);
+import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../Widget/menu.dart';
+
+class Scanner extends StatefulWidget {
   @override
-  State<HomeSccreenScanner> createState() => _HomeSccreenScannerState();
+  _ScannerState createState() => _ScannerState();
 }
 
-class _HomeSccreenScannerState extends State<HomeSccreenScanner> {
+class _ScannerState extends State<Scanner> {
+  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
+  QRViewController controller;
 
-  String _scanBarcode = 'Unknown';
-  /// For Continuous scan
-  Future<void> startBarcodeScanStream() async {
-    FlutterBarcodeScanner.getBarcodeStreamReceiver(
-        '#ff6666', 'Cancel', true, ScanMode.BARCODE)!
-        .listen((barcode) => print(barcode));
+  @override
+  void dispose() {
+    controller?.dispose();
+    super.dispose();
   }
-  Future<void> barcodeScan() async {
-    String barcodeScanRes;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    try {
-      barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-          '#ff6666', 'Cancel', true, ScanMode.QR);
-      print(barcodeScanRes);
-    } on PlatformException {
-      barcodeScanRes = 'Failed to get platform version.';
-    }
-    if (!mounted) return;
-    setState(() {
-      _scanBarcode = barcodeScanRes;
-    });
-  }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Flutter Barcode Scanner Demo'),
-          centerTitle: true,
-          automaticallyImplyLeading: false,
-          backgroundColor: Colors.cyan,
-        ),
-        body: Builder(builder: (BuildContext context) {
-          return Container(
-              alignment: Alignment.center,
-              child: Flex(
-                  direction: Axis.vertical,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    const Image(
-                      image: AssetImage("assets/logo.png"),
-                      height: 150,
+      drawer: NavBar(),
+      appBar: AppBar(
+        title: Text("Attend"),
+      ),
+      body: Stack(
+        children: [
+          Column(
+            children: <Widget>[
+              Expanded(
+                flex: 5,
+                child: Stack(
+                  children: [
+                    QRView(
+                      key: qrKey,
+                      onQRViewCreated: _onQRViewCreated,
                     ),
-                    const SizedBox(
-                      height: 50,
-                    ),
-                    Text('Scan result : $_scanBarcode\n',
-                        style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold)),
-                    SizedBox(
-                      height: 45,
-                      child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            primary: Colors.cyan,
+                    Center(
+                      child: Container(
+                        width: 300,
+                        height: 300,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.red,
+                            width: 4,
                           ),
-                          onPressed: () => barcodeScan(),
-                          child: const Text('Barcode Scan',
-                              style: TextStyle(
-                                  fontSize: 17, fontWeight: FontWeight.bold))),
-                    ),
-                  ]));
-        }));
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              ),
+              Expanded(
+                flex: 1,
+                child: Center(
+                  child: Text('Scan a code'),
+                ),
 
+              )
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onQRViewCreated(QRViewController controller) {
+    this.controller = controller;
+    controller.scannedDataStream.listen((scanData) async {
+      controller.pauseCamera();
+      if (await canLaunch(scanData.code)) {
+        await launch(scanData.code);
+        controller.resumeCamera();
+      } else {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Could not find viable url'),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: <Widget>[
+                    Text('Barcode Type: ${describeEnum(scanData.format)}'),
+                    Text('Data: ${scanData.code}'),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: Text('Ok'),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        ).then((value) => controller.resumeCamera());
+      }
+    });
   }
 }

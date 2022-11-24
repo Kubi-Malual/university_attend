@@ -1,0 +1,30 @@
+{
+  "name": "university_attend",
+  "version": "1.0.0",
+  "description": "linking to database",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kubi-Malual/university_attend.git"
+  },
+  "keywords": [
+    "Sexyme25times"
+  ],
+  "author": "Malual",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Kubi-Malual/university_attend/issues"
+  },
+  "homepage": "https://github.com/Kubi-Malual/university_attend#readme",
+  "dependencies": {
+    "body-parser": "^1.20.1",
+    "express": "^4.18.2"
+  }
+}
